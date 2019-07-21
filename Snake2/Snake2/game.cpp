@@ -36,7 +36,7 @@ void FillRect(HDC hDC, const RECT* pRect, COLORREF color)
 	ExtTextOut(hDC, 0, 0, ETO_OPAQUE, pRect, TEXT(""), 0, 0);
 	SetBkColor(hDC, oldColor);
 }
-
+;
 void FillSnake(std::vector<RECT> body , HDC hDC)
 {
 	
@@ -49,7 +49,7 @@ void FillSnake(std::vector<RECT> body , HDC hDC)
 			if (i == 0)
 				FillRect(hDC, &temp, RGB(255, 0, 0)); //Draw a red square.
 			else
-				FillRect(hDC, &temp, RGB(120, 255, 10)); //Draw a red square.
+				FillRect(hDC, &temp, RGB(120, 255, 10)); //Draw a green square.
 		}
 }
 
@@ -61,6 +61,7 @@ enum Direction{up, down, left, right, stop};
 
 namespace game
 {
+	
 	unsigned int windowWidth = 0;
 	unsigned int windowHeight = 0;
 	bool gameover ;
@@ -85,6 +86,7 @@ namespace game
 		 body.clear();
 		 dir = stop;
 		//score = 0;
+		 
 	
 		OutputDebugStringA("My game has been initialized. This text should be shown in the 'output' window in VS");
 		RECT r , r2 , r3;
@@ -93,27 +95,29 @@ namespace game
 		r.top = windowHeight / 2;
 		r.right = r.left + size;
 		r.bottom = r.top + size;
+		body.push_back(r);
 
-		r2.left = r.left-size;
 		r2.top = r.top;
+		r2.left = r.left-size;
 		r2.right = r2.left + size;
 		r2.bottom = r2.top + size;
-		
-		r3.left = r2.left-size;
+		body.push_back(r2);
+
 		r3.top = r2.top;
+		r3.left = r2.left-size;
 		r3.right = r3.left + size;
 		r3.bottom = r3.top + size;
 
-		body.push_back(r);
+		
 		
 		//visited.insert(std::pair<RECT,int>(r,true));
-		body.push_back(r2);
+		
 		//visited.insert(std::pair<RECT,int>(r2,true));
 		body.push_back(r3);
 		//visited.insert(std::pair<RECT,int>(r3,true));
 		
 		
-		    food.left = r.left - 60;
+		    food.left = r.left - 120;
 			food.top = r.top;
 			food.right = food.left + (size);
 			food.bottom = food.top + (size);
@@ -174,24 +178,29 @@ namespace game
 	s.left = newLeft;
 	s.bottom =s.top + size ;
 	s.right =s.left + size ;
-	//TODO : check new == any existing()
-	//map of bolean to th RECTs
 	
-	//for (int i = 1; i < body.size(); i++)
-	//{
-	//	if(s.top ==  body[i].top && s.left == body[i].left)
-	//		gameover = true;
-	//}
-
-	body.insert(body.begin(), s);
+	
+	for (int i = 1; i < body.size()-1; i++)
+	{
+		if(s.top ==  body[i].top && s.left == body[i].left)
+			{
+				gameover = true;
+				MessageBox(0,TEXT("You ate yourself :P "), TEXT("GAMEOVER !!!!"), MB_OK);
+				Initialize(hWnd);
+			}
+			
+	}
 	RECT tail;
-	tail = body[body.size()-1];
-	//TODO: 
-	//visited [body.size()-1] = false;
+	if (dir != stop){
+		body.insert(body.begin(), s);
+		
+		tail = body[body.size()-1];
+		//TODO: 
+		//visited [body.size()-1] = false;
 
-	body.erase(body.end()-1);
+		body.erase(body.end()-1);
 	
-	
+	}
 
 		
 		if (food.left == body[0].left && food.top == body[0].top )
@@ -218,10 +227,12 @@ namespace game
 
 		
 		FillSnake(body , hDC);
+
+
 		if(body[0].right > windowWidth || body[0].left < 0 || body[0].bottom > windowHeight || body[0].top < 0)//Gameover states
 			{
 				gameover = true;
-				MessageBox(0,TEXT("Try again :P "), TEXT("GAMEOVER !!!!"), MB_OK);
+				MessageBox(0,TEXT("Try again :O "), TEXT("GAMEOVER !!!!"), MB_OK);
 				Initialize(hWnd);
 			}
 
@@ -237,6 +248,7 @@ namespace game
 				dir = up;	
 		else if (keyCode == VK_DOWN && dir !=up)
 				dir = down;
+			//else if ( keyCode == VK_LEFT && dir !=right )
 			else if ( keyCode == VK_LEFT && dir !=right && dir !=stop)
 					dir = left;
 				else if( keyCode == VK_RIGHT && dir!=left)
