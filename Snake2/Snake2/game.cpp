@@ -1,4 +1,5 @@
 # include <time.h>  
+# include <map>  
 # include <Windows.h>
 # include <vector>
 # include <string>
@@ -62,13 +63,15 @@ namespace game
 {
 	unsigned int windowWidth = 0;
 	unsigned int windowHeight = 0;
-	bool gameover = false;
+	bool gameover ;
 	static int size = 20;
-	int Length = 2;
-	static int score;
+	//int Length = 2;
+	//static int score;
 	std::vector<RECT> body;
+	//std::map <RECT,bool> visited;
+	
 	RECT food;
-	Direction dir = stop;
+	Direction dir;
 	
 	
 	// This is called when the application is launched.
@@ -78,7 +81,10 @@ namespace game
 		GetClientRect(hWnd, &rClient);
 		windowWidth = rClient.right - rClient.left; // rClient.top and rClient.left are always 0.
 		windowHeight = rClient.bottom - rClient.top;
-		score = 0;
+		 gameover = false;
+		 body.clear();
+		 dir = stop;
+		//score = 0;
 	
 		OutputDebugStringA("My game has been initialized. This text should be shown in the 'output' window in VS");
 		RECT r , r2 , r3;
@@ -99,8 +105,12 @@ namespace game
 		r3.bottom = r3.top + size;
 
 		body.push_back(r);
+		
+		//visited.insert(std::pair<RECT,int>(r,true));
 		body.push_back(r2);
+		//visited.insert(std::pair<RECT,int>(r2,true));
 		body.push_back(r3);
+		//visited.insert(std::pair<RECT,int>(r3,true));
 		
 		
 		    food.left = r.left - 60;
@@ -166,10 +176,21 @@ namespace game
 	s.right =s.left + size ;
 	//TODO : check new == any existing()
 	//map of bolean to th RECTs
+	
+	//for (int i = 1; i < body.size(); i++)
+	//{
+	//	if(s.top ==  body[i].top && s.left == body[i].left)
+	//		gameover = true;
+	//}
+
 	body.insert(body.begin(), s);
 	RECT tail;
 	tail = body[body.size()-1];
+	//TODO: 
+	//visited [body.size()-1] = false;
+
 	body.erase(body.end()-1);
+	
 	
 
 		
@@ -181,26 +202,28 @@ namespace game
 			food.right = food.left + (size);
 			food.bottom = food.top + (size);
 			body.push_back(tail);
-			score ++; 
-			Length++;
+			//score ++; 
+			//Length++;
 
 		} 
 		
 		
-		if(body[0].right== windowWidth || body[0].left==0 || body[0].bottom== windowHeight || body[0].top==0)//Gameover states
-		{
-			gameover = true;
-			MessageBox(0,TEXT("Try again :P "), TEXT("GAMEOVER !!!!"), MB_OK);
-		}
+		
 
 		RECT foodTemp = food;
 		foodTemp.top +=2;
 		foodTemp.left +=2;
+
 		FillRect(hDC, &foodTemp, RGB(255, 255, 10)); //Draw a food square.
 
 		
 		FillSnake(body , hDC);
-
+		if(body[0].right > windowWidth || body[0].left < 0 || body[0].bottom > windowHeight || body[0].top < 0)//Gameover states
+			{
+				gameover = true;
+				MessageBox(0,TEXT("Try again :P "), TEXT("GAMEOVER !!!!"), MB_OK);
+				Initialize(hWnd);
+			}
 
 	}
 
@@ -209,7 +232,7 @@ namespace game
 	// Use this to change the direction of your snake.
 	bool OnKeyDown(WPARAM keyCode)
 	{
-		//TODO: store the previous key pressed
+		
 		if (keyCode == VK_UP && dir !=down)
 				dir = up;	
 		else if (keyCode == VK_DOWN && dir !=up)
