@@ -1,4 +1,4 @@
-
+# include <time.h>  
 # include <Windows.h>
 # include <vector>
 # include <string>
@@ -38,9 +38,17 @@ void FillRect(HDC hDC, const RECT* pRect, COLORREF color)
 
 void FillSnake(std::vector<RECT> body , HDC hDC)
 {
+	
 	for (int i = 0; i < body.size(); i++)
 		{
-			FillRect(hDC, &body[i], RGB(120, 255, 10)); //Draw a red square.
+			
+			RECT temp = body[i];
+			temp.left+=2;
+			temp.top+=2;
+			if (i == 0)
+				FillRect(hDC, &temp, RGB(255, 0, 0)); //Draw a red square.
+			else
+				FillRect(hDC, &temp, RGB(120, 255, 10)); //Draw a red square.
 		}
 }
 
@@ -54,15 +62,14 @@ namespace game
 {
 	unsigned int windowWidth = 0;
 	unsigned int windowHeight = 0;
-	unsigned int vertical;
-	unsigned int horizontal;
 	bool gameover = false;
-	static int size = 15;
+	static int size = 20;
 	int Length = 2;
-	int score;
+	static int score;
 	std::vector<RECT> body;
 	RECT food;
 	Direction dir = stop;
+	
 	
 	// This is called when the application is launched.
 	bool Initialize(HWND hWnd)
@@ -71,34 +78,33 @@ namespace game
 		GetClientRect(hWnd, &rClient);
 		windowWidth = rClient.right - rClient.left; // rClient.top and rClient.left are always 0.
 		windowHeight = rClient.bottom - rClient.top;
-		vertical = windowHeight;
-		horizontal = windowWidth;
 		score = 0;
 	
 		OutputDebugStringA("My game has been initialized. This text should be shown in the 'output' window in VS");
-		/*RECT r , r2 , r3;
+		RECT r , r2 , r3;
 
-		r.left = horizontal / 2;
-		r.top = vertical / 2;
+		r.left = windowWidth / 2 ;
+		r.top = windowHeight / 2;
 		r.right = r.left + size;
 		r.bottom = r.top + size;
 
-		r2.left = r.left-size-2;
+		r2.left = r.left-size;
 		r2.top = r.top;
 		r2.right = r2.left + size;
 		r2.bottom = r2.top + size;
 		
-		r3.left = r2.left-size-2;
+		r3.left = r2.left-size;
 		r3.top = r2.top;
 		r3.right = r3.left + size;
 		r3.bottom = r3.top + size;
 
 		body.push_back(r);
 		body.push_back(r2);
-		body.push_back(r3);*/
+		body.push_back(r3);
 		
-		    food.left = windowWidth - 150;
-			food.top = windowHeight - 120;
+		
+		    food.left = r.left - 60;
+			food.top = r.top;
 			food.right = food.left + (size);
 			food.bottom = food.top + (size);
 		
@@ -124,100 +130,77 @@ namespace game
 		
 	
 
-		//RECT r ;
-		//RECT r2 , r3;
-		RECT r , r2 , r3;
-
-		r.left = horizontal / 2;
-		r.top = vertical / 2;
-		r.right = r.left + size;
-		r.bottom = r.top + size;
-
-		r2.left = r.left-size-2;
-		r2.top = r.top;
-		r2.right = r2.left + size;
-		r2.bottom = r2.top + size;
-		
-		r3.left = r2.left-size-2;
-		r3.top = r2.top;
-		r3.right = r3.left + size;
-		r3.bottom = r3.top + size;
-
-		body.push_back(r);
-		body.push_back(r2);
-		body.push_back(r3);
-
-	/*	r.left = horizontal / 2;
-		r.top = vertical / 2;
-		r.right = r.left + size;
-		r.bottom = r.top + size;*/
-		//int prevTop  = r.top;
+	
+		int newTop = body[0].top;
+		int newLeft = body[0].left;
 		switch (dir)
 		{
-			int newTop = body[0].top;
-			int newLeft = body[0].left;
+			
 		case up:
-			newTop -= (size+2);
-			 //vertical-=size;
-			 //prevTop +=(size+2);
+			newTop -= (size);
 			break;
 		case down:
-			newTop += (size+2);
+			newTop += (size);
 
-			 //vertical+=size;
-			  //prevTop -=(size+2);
 			break;
 		case left:
 
-			newLeft -= (size+2);
+			newLeft -= (size);
 
-			//horizontal-=size;
+			
 			break;
 		case right:
-			newLeft += (size+2);
+			newLeft += (size);
 
-			//horizontal+=size;
 			break;
 		default:
 			
 			break;
 		}
 		
-		/*r2.left = r.left-size-2;
-		r2.top = prevTop;
-		r2.right = r2.left + size;
-		r2.bottom = r2.top + size;*/
+		RECT s;
 
-		//if (food.left == r.left && food.top == r.top )
+	s.top = newTop;
+	s.left = newLeft;
+	s.bottom =s.top + size ;
+	s.right =s.left + size ;
+	//TODO : check new == any existing()
+	//map of bolean to th RECTs
+	body.insert(body.begin(), s);
+	RECT tail;
+	tail = body[body.size()-1];
+	body.erase(body.end()-1);
+	
+
+		
 		if (food.left == body[0].left && food.top == body[0].top )
 		{
-			
-			food.left = rand() % windowWidth;
-			food.top = rand() % windowHeight;
+			srand (time(NULL));
+			food.left  = rand()%30 * size;
+			food.top  = rand() % 30 * size;
 			food.right = food.left + (size);
 			food.bottom = food.top + (size);
+			body.push_back(tail);
 			score ++; 
 			Length++;
 
 		} 
 		
-		//if(r.right== windowWidth || r.left==0 || r.bottom== windowHeight || r.top==0)//Gameover states
+		
 		if(body[0].right== windowWidth || body[0].left==0 || body[0].bottom== windowHeight || body[0].top==0)//Gameover states
 		{
 			gameover = true;
 			MessageBox(0,TEXT("Try again :P "), TEXT("GAMEOVER !!!!"), MB_OK);
 		}
 
-		FillRect(hDC, &food, RGB(255, 255, 10)); //Draw a food square.
+		RECT foodTemp = food;
+		foodTemp.top +=2;
+		foodTemp.left +=2;
+		FillRect(hDC, &foodTemp, RGB(255, 255, 10)); //Draw a food square.
 
 		
-		//FillSnake(body , hDC);
+		FillSnake(body , hDC);
 
-		FillRect(hDC, &body[0], RGB(225, 255, 10)); //Draw a red square.
-		FillRect(hDC, &body[1], RGB(225, 255, 10)); //Draw a red square.
-		FillRect(hDC, &body[2], RGB(225, 255, 10)); //Draw a red square.
-
-		//FillRect(hDC, &r2, RGB(120, 255, 10)); //Draw a red square.
 
 	}
 
@@ -226,13 +209,14 @@ namespace game
 	// Use this to change the direction of your snake.
 	bool OnKeyDown(WPARAM keyCode)
 	{
-		if (keyCode == VK_UP )
+		//TODO: store the previous key pressed
+		if (keyCode == VK_UP && dir !=down)
 				dir = up;	
-		else if ( keyCode == VK_DOWN )
+		else if (keyCode == VK_DOWN && dir !=up)
 				dir = down;
-			else if ( keyCode == VK_LEFT )
+			else if ( keyCode == VK_LEFT && dir !=right && dir !=stop)
 					dir = left;
-				else if( keyCode == VK_RIGHT)
+				else if( keyCode == VK_RIGHT && dir!=left)
 						dir = right;
 			
 		
