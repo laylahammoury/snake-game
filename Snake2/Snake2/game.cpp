@@ -1,5 +1,6 @@
 # include <time.h>  
 # include <map>  
+# include<queue>
 # include <Windows.h>
 # include <vector>
 # include <string>
@@ -36,7 +37,9 @@ void FillRect(HDC hDC, const RECT* pRect, COLORREF color)
 	ExtTextOut(hDC, 0, 0, ETO_OPAQUE, pRect, TEXT(""), 0, 0);
 	SetBkColor(hDC, oldColor);
 }
-;
+
+//This is used to make a point and initialize it
+//POINT MakePoint(int x, int y ) { POINT pt = {x, y}; return pt; }
 
 
 
@@ -52,11 +55,13 @@ namespace game
 	unsigned int windowWidth = 0;
 	unsigned int windowHeight = 0;
 	bool gameover ;
+
 	int score;
 	static int size = 20;
 	int padding = 2;
 	std::vector<RECT> body;
-	//std::map <RECT,bool> visited;
+	std::queue<Direction> moves;
+	
 	
 	RECT food;
 	Direction dir;
@@ -64,7 +69,7 @@ namespace game
 	
 	void FillSnake(std::vector<RECT> body , HDC hDC)
 	{
-		for (int i = 0; i < body.size(); i++)
+		for (int i = body.size()-1; i >= 0; i--)
 			{
 			
 				RECT temp = body[i];
@@ -79,6 +84,26 @@ namespace game
 
 	}
 
+	//void FillFood(RECT food, HDC hDC){
+	//
+	//	FillRect(hDC, &food, RGB(255, 120, 0)); //Draw a black square.
+	//	int mid = ( food.right + food.left ) / 2;
+	//	int third = ( food.top + food.bottom ) / 3;
+	//	int sixth = ( food.top + food.bottom ) / 6;
+	//	POINT points[5];
+	//	
+	//	points[0].x=food.top;
+	//	points[0].y = mid;
+	//	
+	//	points[3] = MakePoint(food.top, mid);
+	//	points[2] = MakePoint( third, food.right);
+	//	points[4] = MakePoint( third, food.left);
+	//	points[1] = MakePoint( food.bottom-100, sixth);
+	//	points[0] = MakePoint( food.bottom, food.bottom-sixth);
+	//	
+	//	Polygon(hDC, points, 5);
+	//}
+
 	// This is called when the application is launched.
 	bool Initialize(HWND hWnd)
 	{
@@ -86,9 +111,9 @@ namespace game
 		GetClientRect(hWnd, &rClient);
 		windowWidth = rClient.right - rClient.left; // rClient.top and rClient.left are always 0.
 		windowHeight = rClient.bottom - rClient.top;
-		 gameover = false;
-		 body.clear();
-		 dir = stop;
+		gameover = false;
+		body.clear();
+		dir = stop;
 		score = 0;
 		 
 	
@@ -117,10 +142,7 @@ namespace game
 		body.push_back(r2);
 		body.push_back(r3);
 
-		//visited.insert(std::pair<RECT,int>(r,true));
-		//visited.insert(std::pair<RECT,int>(r2,true));
-		//visited.insert(std::pair<RECT,int>(r3,true));
-		
+	
 		
 		    food.left = r.left + 120;
 			food.top = r.top;
@@ -134,8 +156,14 @@ namespace game
 	// This is called periodically. Use it to update your game state and draw to the window.
 	void CALLBACK OnTimer(HWND hWnd, UINT Msg, UINT_PTR idTimer, DWORD dwTime)
 	{
+		if( moves.size() >=1 )
+		{
+			dir = moves.front();
+			moves.pop();
+		}
+		
 		if ( gameover )
-			return;
+			return ;
 		HDC hDC = GetDC(hWnd);
 		RECT rClient;
 		GetClientRect(hWnd, &rClient);
@@ -152,23 +180,28 @@ namespace game
 	
 		int newTop = body[0].top;
 		int newLeft = body[0].left;
+		
 		switch (dir)
 		{
 			
 		case up:
 			newTop -= (size);
+			
 			break;
 
 		case down:
 			newTop += (size);
+			
 			break;
 
 		case left:
 			newLeft -= (size);
+			
 			break;
 
 		case right:
 			newLeft += (size);
+			
 			break;
 		default:
 			
@@ -183,16 +216,7 @@ namespace game
 	s.right =s.left + size ;
 	
 	
-	/*for (int i = 1; i < body.size()-1; i++)
-	{
-		if(s.top ==  body[i].top && s.left == body[i].left)
-			{
-				gameover = true;
-				MessageBox(0,TEXT("You ate yourself :P "), TEXT("GAMEOVER !!!!"), MB_OK);
-				Initialize(hWnd);
-			}
-			
-	}*/
+
 	RECT tail;
 	if (dir != stop){
 		body.insert(body.begin(), s);
@@ -214,7 +238,7 @@ namespace game
 			food.bottom = food.top + (size);
 			body.push_back(tail);
 			score += 10; 
-			//Length++;
+			
 
 		} 
 		
@@ -224,7 +248,7 @@ namespace game
 		RECT foodTemp = food;
 		foodTemp.top +=padding;
 		foodTemp.left +=padding;
-
+		//FillFood(foodTemp , hDC);
 		FillRect(hDC, &foodTemp, RGB(255, 255, 10)); //Draw a food square.
 
 		
@@ -234,7 +258,7 @@ namespace game
 		headTemp = body[0];
 		headTemp.top += padding;
 		headTemp.left += padding;
-		FillRect(hDC, &headTemp, RGB(255, 0, 10)); //Draw the head again .
+		
 
 	for (int i = 1; i < body.size()-1; i++)
 		{
@@ -254,6 +278,7 @@ namespace game
 				Initialize(hWnd);
 			}
 
+		
 	}//end of OnTimer
 
 
@@ -262,15 +287,27 @@ namespace game
 	bool OnKeyDown(WPARAM keyCode)
 	{
 		
-		if (keyCode == VK_UP && dir !=down)
-				dir = up;	
+		if (keyCode == VK_UP && dir !=Direction::down)
+				{
+					dir = up;	
+					moves.push(dir);
+				}
 		else if (keyCode == VK_DOWN && dir !=up)
-				dir = down;
+				{
+					dir = down;
+					moves.push(dir);
+				}
 			//else if ( keyCode == VK_LEFT && dir !=right )
 			else if ( keyCode == VK_LEFT && dir !=right && dir !=stop)
+				{
 					dir = left;
+					moves.push(dir);
+				}
 				else if( keyCode == VK_RIGHT && dir!=left)
-						dir = right;
+				{
+					dir = right;
+					moves.push(dir);
+				}
 			
 		
 		return false; // They key pressed does not interest us. Let the OS handle it.
