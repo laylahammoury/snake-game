@@ -11,7 +11,7 @@ The functions are:
 
 Initialize()
 OnTimer()
-OnKeyDown()
+OnKeyDown()e
 
 The file shows you how to draw rectangles with specific colors and how to draw text if you need to.
 You should not need anything else because we are looking to create a visually-simple Snake game, so flat squared should be good enough.
@@ -37,25 +37,12 @@ void FillRect(HDC hDC, const RECT* pRect, COLORREF color)
 	SetBkColor(hDC, oldColor);
 }
 ;
-void FillSnake(std::vector<RECT> body , HDC hDC)
-{
-	
-	for (int i = 0; i < body.size(); i++)
-		{
-			
-			RECT temp = body[i];
-			temp.left+=2;
-			temp.top+=2;
-			if (i == 0)
-				FillRect(hDC, &temp, RGB(255, 0, 0)); //Draw a red square.
-			else
-				FillRect(hDC, &temp, RGB(120, 255, 10)); //Draw a green square.
-		}
-}
+
 
 
 // Use this to draw text if you need to.
 void DrawTextLine(HWND hWnd, HDC hDC, const char* sText, RECT* prText, COLORREF clr);
+
 
 enum Direction{up, down, left, right, stop};
 
@@ -65,9 +52,9 @@ namespace game
 	unsigned int windowWidth = 0;
 	unsigned int windowHeight = 0;
 	bool gameover ;
+	int score;
 	static int size = 20;
-	//int Length = 2;
-	//static int score;
+	int padding = 2;
 	std::vector<RECT> body;
 	//std::map <RECT,bool> visited;
 	
@@ -75,6 +62,23 @@ namespace game
 	Direction dir;
 	
 	
+	void FillSnake(std::vector<RECT> body , HDC hDC)
+	{
+		for (int i = 0; i < body.size(); i++)
+			{
+			
+				RECT temp = body[i];
+				temp.left+=padding;
+				temp.top+=padding;
+				if (i == 0)
+					FillRect(hDC, &temp, RGB(255, 0, 0)); //Draw a red square.
+				else
+					FillRect(hDC, &temp, RGB(120, 255, 10)); //Draw a green square.
+			}
+		
+
+	}
+
 	// This is called when the application is launched.
 	bool Initialize(HWND hWnd)
 	{
@@ -85,7 +89,7 @@ namespace game
 		 gameover = false;
 		 body.clear();
 		 dir = stop;
-		//score = 0;
+		score = 0;
 		 
 	
 		OutputDebugStringA("My game has been initialized. This text should be shown in the 'output' window in VS");
@@ -95,13 +99,13 @@ namespace game
 		r.top = windowHeight / 2;
 		r.right = r.left + size;
 		r.bottom = r.top + size;
-		body.push_back(r);
+		
 
 		r2.top = r.top;
 		r2.left = r.left-size;
 		r2.right = r2.left + size;
 		r2.bottom = r2.top + size;
-		body.push_back(r2);
+		
 
 		r3.top = r2.top;
 		r3.left = r2.left-size;
@@ -109,15 +113,16 @@ namespace game
 		r3.bottom = r3.top + size;
 
 		
-		
-		//visited.insert(std::pair<RECT,int>(r,true));
-		
-		//visited.insert(std::pair<RECT,int>(r2,true));
+		body.push_back(r);
+		body.push_back(r2);
 		body.push_back(r3);
+
+		//visited.insert(std::pair<RECT,int>(r,true));
+		//visited.insert(std::pair<RECT,int>(r2,true));
 		//visited.insert(std::pair<RECT,int>(r3,true));
 		
 		
-		    food.left = r.left - 120;
+		    food.left = r.left + 120;
 			food.top = r.top;
 			food.right = food.left + (size);
 			food.bottom = food.top + (size);
@@ -136,7 +141,7 @@ namespace game
 		GetClientRect(hWnd, &rClient);
 		FillRect(hDC, &rClient, RGB(0, 0, 0)); // Clear the window to blackness.
 		char text[256] = { 0 };
-		sprintf_s(text, "OnTimer. Time: %d", dwTime);
+		sprintf_s(text, " Score : %d", score);
 		RECT rText = { 0, 0, rClient.right, 15 };
 		DrawTextLine(hWnd, hDC, text, &rText, RGB(120, 120, 120));
 
@@ -153,19 +158,17 @@ namespace game
 		case up:
 			newTop -= (size);
 			break;
+
 		case down:
 			newTop += (size);
-
 			break;
+
 		case left:
-
 			newLeft -= (size);
-
-			
 			break;
+
 		case right:
 			newLeft += (size);
-
 			break;
 		default:
 			
@@ -180,7 +183,7 @@ namespace game
 	s.right =s.left + size ;
 	
 	
-	for (int i = 1; i < body.size()-1; i++)
+	/*for (int i = 1; i < body.size()-1; i++)
 	{
 		if(s.top ==  body[i].top && s.left == body[i].left)
 			{
@@ -189,18 +192,17 @@ namespace game
 				Initialize(hWnd);
 			}
 			
-	}
+	}*/
 	RECT tail;
 	if (dir != stop){
 		body.insert(body.begin(), s);
 		
 		tail = body[body.size()-1];
-		//TODO: 
-		//visited [body.size()-1] = false;
-
+	
 		body.erase(body.end()-1);
 	
 	}
+
 
 		
 		if (food.left == body[0].left && food.top == body[0].top )
@@ -211,7 +213,7 @@ namespace game
 			food.right = food.left + (size);
 			food.bottom = food.top + (size);
 			body.push_back(tail);
-			//score ++; 
+			score += 10; 
 			//Length++;
 
 		} 
@@ -220,14 +222,30 @@ namespace game
 		
 
 		RECT foodTemp = food;
-		foodTemp.top +=2;
-		foodTemp.left +=2;
+		foodTemp.top +=padding;
+		foodTemp.left +=padding;
 
 		FillRect(hDC, &foodTemp, RGB(255, 255, 10)); //Draw a food square.
 
 		
 		FillSnake(body , hDC);
 
+		RECT headTemp;
+		headTemp = body[0];
+		headTemp.top += padding;
+		headTemp.left += padding;
+		FillRect(hDC, &headTemp, RGB(255, 0, 10)); //Draw the head again .
+
+	for (int i = 1; i < body.size()-1; i++)
+		{
+			if(s.top ==  body[i].top && s.left == body[i].left)
+				{
+					gameover = true;
+					MessageBox(0,TEXT("You ate yourself :P "), TEXT("GAMEOVER !!!!"), MB_OK);
+					Initialize(hWnd);
+				}
+			
+		}
 
 		if(body[0].right > windowWidth || body[0].left < 0 || body[0].bottom > windowHeight || body[0].top < 0)//Gameover states
 			{
@@ -236,7 +254,7 @@ namespace game
 				Initialize(hWnd);
 			}
 
-	}
+	}//end of OnTimer
 
 
 	// This is called when the user presses a key on the keyboard.
@@ -257,4 +275,6 @@ namespace game
 		
 		return false; // They key pressed does not interest us. Let the OS handle it.
 	}
+
+
 }
