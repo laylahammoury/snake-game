@@ -164,7 +164,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   return FALSE;
    }
 
-   SetTimer(hWnd, GAME_TIMER, 1000 , game::OnTimer);
+   SetTimer(hWnd, GAME_TIMER, 75 , game::OnTimer);
 
    return TRUE;
 }

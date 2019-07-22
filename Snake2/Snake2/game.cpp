@@ -69,16 +69,19 @@ namespace game
 	
 	void FillSnake(std::vector<RECT> body , HDC hDC)
 	{
+		int green = 255;
 		for (int i = body.size()-1; i >= 0; i--)
 			{
 			
 				RECT temp = body[i];
 				temp.left+=padding;
 				temp.top+=padding;
+				if(green > 105)
+					green-=15;
 				if (i == 0)
-					FillRect(hDC, &temp, RGB(255, 0, 0)); //Draw a red square.
+					FillRect(hDC, &temp, RGB(255, 77, 50)); //Draw a red square.
 				else
-					FillRect(hDC, &temp, RGB(120, 255, 10)); //Draw a green square.
+					FillRect(hDC, &temp, RGB(50, green, 50)); //Draw a green square.
 			}
 		
 
@@ -249,7 +252,7 @@ namespace game
 		foodTemp.top +=padding;
 		foodTemp.left +=padding;
 		//FillFood(foodTemp , hDC);
-		FillRect(hDC, &foodTemp, RGB(255, 255, 10)); //Draw a food square.
+		FillRect(hDC, &foodTemp, RGB(255, 255, 77)); //Draw a food square.
 
 		
 		FillSnake(body , hDC);
