@@ -4,6 +4,7 @@
 # include <Windows.h>
 # include <vector>
 # include <string>
+# include<ColorDlg.h>
 
 /*
 Welcome to the Snake game programming challenge. You are required to add code to the following three functions to implement the Snake game.
@@ -18,6 +19,17 @@ The file shows you how to draw rectangles with specific colors and how to draw t
 You should not need anything else because we are looking to create a visually-simple Snake game, so flat squared should be good enough.
 
 Good luck!
+
+* Exceptions
+* classes (constructors, destructors, copy constructors, operator overloading, virtual methods, abstract classes)
+* Templates (template functions and classes).
+
+std::vector<RECT> snake;
+
+
+CVs and interviews:
+techlead: top resume mistakes
+Deniz Sasal: very useful discussions about intervies, CVs... etc. (white background)
 */
 
 
@@ -47,66 +59,27 @@ void FillRect(HDC hDC, const RECT* pRect, COLORREF color)
 void DrawTextLine(HWND hWnd, HDC hDC, const char* sText, RECT* prText, COLORREF clr);
 
 
-enum Direction{up, down, left, right, stop};
+
 
 namespace game
 {
-	
+	enum Direction{up, down, left, right, stop};
 	unsigned int windowWidth = 0;
 	unsigned int windowHeight = 0;
 	bool gameover ;
-
+	RECT tail , head , food;
+	//Color black =  RGB(0, 0, 0);
 	int score;
 	static int size = 20;
 	int padding = 2;
+	static int foodRandomizing;
 	std::vector<RECT> body;
 	std::queue<Direction> moves;
 	
 	
-	RECT food;
+	
 	Direction dir;
 	
-	
-	void FillSnake(std::vector<RECT> body , HDC hDC)
-	{
-		int green = 255;
-		for (int i = body.size()-1; i >= 0; i--)
-			{
-			
-				RECT temp = body[i];
-				temp.left+=padding;
-				temp.top+=padding;
-				if(green > 105)
-					green-=15;
-				if (i == 0)
-					FillRect(hDC, &temp, RGB(255, 77, 50)); //Draw a red square.
-				else
-					FillRect(hDC, &temp, RGB(50, green, 50)); //Draw a green square.
-			}
-		
-
-	}
-
-	//void FillFood(RECT food, HDC hDC){
-	//
-	//	FillRect(hDC, &food, RGB(255, 120, 0)); //Draw a black square.
-	//	int mid = ( food.right + food.left ) / 2;
-	//	int third = ( food.top + food.bottom ) / 3;
-	//	int sixth = ( food.top + food.bottom ) / 6;
-	//	POINT points[5];
-	//	
-	//	points[0].x=food.top;
-	//	points[0].y = mid;
-	//	
-	//	points[3] = MakePoint(food.top, mid);
-	//	points[2] = MakePoint( third, food.right);
-	//	points[4] = MakePoint( third, food.left);
-	//	points[1] = MakePoint( food.bottom-100, sixth);
-	//	points[0] = MakePoint( food.bottom, food.bottom-sixth);
-	//	
-	//	Polygon(hDC, points, 5);
-	//}
-
 	// This is called when the application is launched.
 	bool Initialize(HWND hWnd)
 	{
@@ -118,6 +91,8 @@ namespace game
 		body.clear();
 		dir = stop;
 		score = 0;
+		foodRandomizing = windowWidth/size;
+		srand (time(NULL));
 		 
 	
 		OutputDebugStringA("My game has been initialized. This text should be shown in the 'output' window in VS");
@@ -147,40 +122,55 @@ namespace game
 
 	
 		
-		    food.left = r.left + 120;
-			food.top = r.top;
-			food.right = food.left + (size);
-			food.bottom = food.top + (size);
+		food.left = r.left + 4*foodRandomizing;
+		food.top = r.top;
+		food.right = food.left + (size);
+		food.bottom = food.top + (size);
 		
 		return true;
 	}
-
-
-	// This is called periodically. Use it to update your game state and draw to the window.
-	void CALLBACK OnTimer(HWND hWnd, UINT Msg, UINT_PTR idTimer, DWORD dwTime)
+	// This is called to draw the snake
+	void FillSnake(const std::vector<RECT>& Snakbody , HDC hDC)
 	{
-		if( moves.size() >=1 )
+		int green = 255;
+		for (int i = Snakbody.size()-1; i >= 0; i--)
+			{
+				RECT temp = Snakbody[i];
+				temp.left+=padding;
+				temp.top+=padding;
+				if(green > 105)
+					green-=15;
+				if (i == 0)
+					FillRect(hDC, &temp, RGB(255, 77, 50)); //Draw a red square.
+				else
+					FillRect(hDC, &temp, RGB(50, green, 50)); //Draw a green square.
+			}
+	}
+
+	void checkGamrover ( HWND hWnd)
+	{
+
+		for (int i = 1; i < body.size()-1; i++)
 		{
-			dir = moves.front();
-			moves.pop();
+			if(head.top ==  body[i].top && head.left == body[i].left)
+				{
+					gameover = true;
+					MessageBox(0,TEXT("You ate yourself :P "), TEXT("GAMEOVER !!!!"), MB_OK);
+					Initialize(hWnd);
+				}
+			
 		}
-		
-		if ( gameover )
-			return ;
-		HDC hDC = GetDC(hWnd);
-		RECT rClient;
-		GetClientRect(hWnd, &rClient);
-		FillRect(hDC, &rClient, RGB(0, 0, 0)); // Clear the window to blackness.
-		char text[256] = { 0 };
-		sprintf_s(text, " Score : %d", score);
-		RECT rText = { 0, 0, rClient.right, 15 };
-		DrawTextLine(hWnd, hDC, text, &rText, RGB(120, 120, 120));
 
-	
-		
-	
+		if(body[0].right > windowWidth ||  body[0].left < 0 ||  body[0].bottom > windowHeight ||  body[0].top < 0)//Gameover states
+			{
+				gameover = true;
+				MessageBox(0,TEXT("Try again :O "), TEXT("GAMEOVER !!!!"), MB_OK);
+				Initialize(hWnd);
+			}
+	}
 
-	
+	void MoveSnake( Direction direction){
+
 		int newTop = body[0].top;
 		int newLeft = body[0].left;
 		
@@ -204,39 +194,38 @@ namespace game
 
 		case right:
 			newLeft += (size);
-			
+		
 			break;
-		default:
-			
-			break;
+
 		}
 		
-		RECT s;
-
-	s.top = newTop;
-	s.left = newLeft;
-	s.bottom =s.top + size ;
-	s.right =s.left + size ;
-	
-	
-
-	RECT tail;
-	if (dir != stop){
-		body.insert(body.begin(), s);
 		
-		tail = body[body.size()-1];
+
+		head.top = newTop;
+		head.left = newLeft;
+		head.bottom =head.top + size ;
+		head.right =head.left + size ;
 	
-		body.erase(body.end()-1);
 	
+
+		
+		if (dir != stop){
+			body.insert(body.begin(), head);
+		
+			tail = body[body.size()-1];
+	
+			body.erase(body.end()-1);
+	
+		}
 	}
 
-
-		
-		if (food.left == body[0].left && food.top == body[0].top )
+	void eatFood(){
+	
+	if (food.left == body[0].left && food.top == body[0].top )
 		{
-			srand (time(NULL));
-			food.left  = rand()%30 * size;
-			food.top  = rand() % 30 * size;
+			
+			food.left  = rand()% foodRandomizing * size;
+			food.top  = rand() % foodRandomizing * size;
 			food.right = food.left + (size);
 			food.bottom = food.top + (size);
 			body.push_back(tail);
@@ -244,6 +233,41 @@ namespace game
 			
 
 		} 
+	}
+	
+	
+
+
+	// This is called periodically. Use it to update your game state and draw to the window.
+	void CALLBACK OnTimer(HWND hWnd, UINT Msg, UINT_PTR idTimer, DWORD dwTime)
+	{
+		
+		HDC hDC = GetDC(hWnd);
+		RECT rClient;
+		GetClientRect(hWnd, &rClient);
+		FillRect(hDC, &rClient, RGB(0, 0, 0)); // Clear the window to blackness.
+		char text[256] = { 0 };
+		sprintf_s(text, " Score : %d", score);
+		RECT rText = { 0, 0, rClient.right, 15 };
+		DrawTextLine(hWnd, hDC, text, &rText, RGB(120, 120, 120));
+
+		if( moves.size() >=1 )
+		{
+			dir = moves.front();
+			moves.pop();
+		}
+		
+		
+		if ( gameover )
+		{
+			FillSnake(body, hDC);//to draw it and see how you died
+			return ;
+		}
+
+		
+		MoveSnake( dir);
+		eatFood();
+		
 		
 		
 		
@@ -251,37 +275,14 @@ namespace game
 		RECT foodTemp = food;
 		foodTemp.top +=padding;
 		foodTemp.left +=padding;
-		//FillFood(foodTemp , hDC);
+		
+
 		FillRect(hDC, &foodTemp, RGB(255, 255, 77)); //Draw a food square.
 
-		
 		FillSnake(body , hDC);
+		checkGamrover ( hWnd);
 
-		RECT headTemp;
-		headTemp = body[0];
-		headTemp.top += padding;
-		headTemp.left += padding;
-		
-
-	for (int i = 1; i < body.size()-1; i++)
-		{
-			if(s.top ==  body[i].top && s.left == body[i].left)
-				{
-					gameover = true;
-					MessageBox(0,TEXT("You ate yourself :P "), TEXT("GAMEOVER !!!!"), MB_OK);
-					Initialize(hWnd);
-				}
-			
-		}
-
-		if(body[0].right > windowWidth || body[0].left < 0 || body[0].bottom > windowHeight || body[0].top < 0)//Gameover states
-			{
-				gameover = true;
-				MessageBox(0,TEXT("Try again :O "), TEXT("GAMEOVER !!!!"), MB_OK);
-				Initialize(hWnd);
-			}
-
-		
+	
 	}//end of OnTimer
 
 
@@ -317,4 +318,4 @@ namespace game
 	}
 
 
-}
+}//end of namespace game
