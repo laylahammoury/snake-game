@@ -59,23 +59,23 @@ void FillRect(HDC hDC, const RECT* pRect, COLORREF color)
 void DrawTextLine(HWND hWnd, HDC hDC, const char* sText, RECT* prText, COLORREF clr);
 
 
-
-
 namespace game
 {
 	enum Direction{up, down, left, right, stop};
 	unsigned int windowWidth = 0;
 	unsigned int windowHeight = 0;
 	bool gameover ;
-	RECT tail , head , food;
+	//RECT tail , head , food;
+	static POINT tail , head , food;
 	//Color black =  RGB(0, 0, 0);
 	int score;
 	static int size = 20;
 	int padding = 2;
 	static int foodRandomizing;
-	std::vector<RECT> body;
+	//std::vector<RECT> body;
+	std::vector<POINT> pointbody;
 	std::queue<Direction> moves;
-	
+	COLORREF snakeColor = RGB(255,100,0);
 	
 	
 	Direction dir;
@@ -88,7 +88,8 @@ namespace game
 		windowWidth = rClient.right - rClient.left; // rClient.top and rClient.left are always 0.
 		windowHeight = rClient.bottom - rClient.top;
 		gameover = false;
-		body.clear();
+		pointbody.clear();
+		//body.clear();
 		dir = stop;
 		score = 0;
 		foodRandomizing = windowWidth/size;
@@ -96,9 +97,21 @@ namespace game
 		 
 	
 		OutputDebugStringA("My game has been initialized. This text should be shown in the 'output' window in VS");
-		RECT r , r2 , r3;
+		//RECT r , r2 , r3;
+		//POINT r , r2 , r3;
+		
+		POINT initArray[3];
+		int initX = windowWidth /2;
+		int initY = windowHeight/2;
 
-		r.left = windowWidth / 2 ;
+		for (int i = 0; i < 3; i++)
+		{
+			initArray[i].x = initX ;
+			initArray[i].y = initY - (i*size);
+			pointbody.push_back(initArray[i]);
+		}
+		
+		/*r.left = windowWidth / 2 ;
 		r.top = windowHeight / 2;
 		r.right = r.left + size;
 		r.bottom = r.top + size;
@@ -119,25 +132,36 @@ namespace game
 		body.push_back(r);
 		body.push_back(r2);
 		body.push_back(r3);
-
+*/
 	
 		
-		food.left = r.left + 4*foodRandomizing;
+		food.x = initArray[0].x ;
+		//food.y = initArray[0].y + (2* foodRandomizing);
+		food.y = initArray[0].y + (2* size);
+
+		/*food.left = r.left + 4*foodRandomizing;
 		food.top = r.top;
 		food.right = food.left + (size);
 		food.bottom = food.top + (size);
-		
+		*/
 		return true;
 	}
 	// This is called to draw the snake
-	void FillSnake(const std::vector<RECT>& Snakbody , HDC hDC)
+	//void FillSnake(const std::vector<RECT>& Snakbody , HDC hDC)
+	void FillSnake(const std::vector<POINT>& Snakbody , HDC hDC)
 	{
+		RECT temp ;
 		int green = 255;
 		for (int i = Snakbody.size()-1; i >= 0; i--)
 			{
-				RECT temp = Snakbody[i];
+				/*RECT temp = Snakbody[i];
 				temp.left+=padding;
-				temp.top+=padding;
+				temp.top+=padding;*/
+				
+				temp.top = Snakbody[i].x ;
+				temp.left = Snakbody[i].y ;
+				temp.bottom = temp.top + (size-padding);
+				temp.right = temp.left + (size-padding);
 				if(green > 105)
 					green-=15;
 				if (i == 0)
@@ -147,12 +171,12 @@ namespace game
 			}
 	}
 
-	void checkGamrover ( HWND hWnd)
+	void checkGameover ( HWND hWnd)
 	{
 
-		for (int i = 1; i < body.size()-1; i++)
+		for (int i = 1; i < pointbody.size()-1; i++)
 		{
-			if(head.top ==  body[i].top && head.left == body[i].left)
+			if(head.x ==  pointbody[i].x && head.y == pointbody[i].y)
 				{
 					gameover = true;
 					MessageBox(0,TEXT("You ate yourself :P "), TEXT("GAMEOVER !!!!"), MB_OK);
@@ -160,8 +184,9 @@ namespace game
 				}
 			
 		}
-
-		if(body[0].right > windowWidth ||  body[0].left < 0 ||  body[0].bottom > windowHeight ||  body[0].top < 0)//Gameover states
+		
+		//if(body[0].right > windowWidth ||  body[0].left < 0 ||  body[0].bottom > windowHeight ||  body[0].top < 0)//Gameover states
+		if( (pointbody[0].y + size) > windowWidth ||  pointbody[0].y  < 0 ||  (pointbody[0].x + size) > windowHeight ||  pointbody[0].x  < 0)//Gameover states
 			{
 				gameover = true;
 				MessageBox(0,TEXT("Try again :O "), TEXT("GAMEOVER !!!!"), MB_OK);
@@ -171,9 +196,11 @@ namespace game
 
 	void MoveSnake( Direction direction){
 
-		int newTop = body[0].top;
-		int newLeft = body[0].left;
+		/*int newTop = body[0].top;
+		int newLeft = body[0].left;*/
 		
+		int newTop = pointbody[0].x;
+		int newLeft = pointbody[0].y;
 		switch (dir)
 		{
 			
@@ -201,34 +228,36 @@ namespace game
 		
 		
 
-		head.top = newTop;
-		head.left = newLeft;
-		head.bottom =head.top + size ;
-		head.right =head.left + size ;
-	
-	
+		//head.top = newTop;
+		//head.left = newLeft;
+		//head.bottom =head.top + size ;
+		//head.right =head.left + size ;
 
-		
-		if (dir != stop){
-			body.insert(body.begin(), head);
-		
-			tail = body[body.size()-1];
+		head.x = newTop;
+		head.y = newLeft;
 	
-			body.erase(body.end()-1);
+		if (dir != stop){
+			pointbody.insert(pointbody.begin(), head);
+		
+			tail = pointbody[pointbody.size()-1];
+	
+			pointbody.erase(pointbody.end()-1);
 	
 		}
 	}
 
 	void eatFood(){
 	
-	if (food.left == body[0].left && food.top == body[0].top )
+	if (food.x == pointbody[0].x && food.y == pointbody[0].y)
 		{
 			
-			food.left  = rand()% foodRandomizing * size;
-			food.top  = rand() % foodRandomizing * size;
-			food.right = food.left + (size);
-			food.bottom = food.top + (size);
-			body.push_back(tail);
+			/*food.x  = rand()% foodRandomizing * size;
+			food.y  = rand() % foodRandomizing * size;*/
+			food.x  = (rand()% foodRandomizing )* size;
+			food.y  = (rand() % foodRandomizing )* size;
+			/*food.right = food.left + (size);
+			food.bottom = food.top + (size);*/
+			pointbody.push_back(tail);
 			score += 10; 
 			
 
@@ -260,7 +289,7 @@ namespace game
 		
 		if ( gameover )
 		{
-			FillSnake(body, hDC);//to draw it and see how you died
+			FillSnake(pointbody, hDC);//to draw it and see how you died
 			return ;
 		}
 
@@ -268,19 +297,19 @@ namespace game
 		MoveSnake( dir);
 		eatFood();
 		
-		
-		
-		
-
-		RECT foodTemp = food;
+		/*RECT foodTemp = food;
 		foodTemp.top +=padding;
-		foodTemp.left +=padding;
-		
+		foodTemp.left +=padding;*/
+		RECT foodTemp;
+		foodTemp.top = food.x ;
+		foodTemp.left = food.y ;
+		foodTemp.bottom = foodTemp.top + (size-padding);
+		foodTemp.right= foodTemp.left+ (size-padding);
 
 		FillRect(hDC, &foodTemp, RGB(255, 255, 77)); //Draw a food square.
 
-		FillSnake(body , hDC);
-		checkGamrover ( hWnd);
+		FillSnake(pointbody , hDC);
+		checkGameover ( hWnd);
 
 	
 	}//end of OnTimer
